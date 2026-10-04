@@ -1,0 +1,35 @@
+table Dim_Product
+	lineageTag: 0794fd74-f50c-403f-8e2b-1eb31343b3bc
+
+	column category
+		dataType: string
+		lineageTag: 5c27114f-232f-45f8-8433-9d1424bdacc6
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column item
+		dataType: string
+		lineageTag: d6b980a5-f314-4f62-b7b3-c5ad38d6d1d6
+		summarizeBy: none
+		sourceColumn: item
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Product = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\tkavi\Downloads\brewmetrics_sales.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"sale_id", Int64.Type}, {"date", type date}, {"city", type text}, {"store_format", type text}, {"category", type text}, {"item", type text}, {"quantity", Int64.Type}, {"unit_price", Int64.Type}, {"sales_amount", type number}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"sale_id", "date", "city", "store_format", "quantity", "unit_price", "sales_amount"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Columns", {"item"})
+				in
+				    #"Removed Duplicates"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

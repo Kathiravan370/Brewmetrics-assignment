@@ -1,0 +1,101 @@
+table Dim_Date
+	lineageTag: d4587b1a-3c50-41b0-ae20-c5d819a30ec2
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: ebe60a14-54e5-4fc8-a8b3-c039f4b90740
+		summarizeBy: none
+		sourceColumn: date
+
+		variation Variation
+			isDefault
+			relationship: 91183931-d737-4a85-975f-8735d4a0f455
+			defaultHierarchy: LocalDateTable_c2857a3a-91d9-497c-92e0-39c15f74cae4.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: ea4c9969-cc69-41cd-beaf-8dba22be7323
+		summarizeBy: sum
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Month Name'
+		dataType: string
+		lineageTag: 916f8638-a996-4aba-b15c-9efd69c47e66
+		summarizeBy: none
+		sourceColumn: Month Name
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: int64
+		formatString: 0
+		lineageTag: 522266ce-ac17-4934-89f6-4e7e57c2ff04
+		summarizeBy: sum
+		sourceColumn: Month
+		sortByColumn: 'Month Name'
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column Day
+		dataType: int64
+		formatString: 0
+		lineageTag: dc955dc5-b9cc-4ee6-b4ff-a08107f30160
+		summarizeBy: sum
+		sourceColumn: Day
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Text After Delimiter'
+		dataType: string
+		lineageTag: b1767bb2-96b8-412e-83bb-f2d817310f43
+		summarizeBy: none
+		sourceColumn: Text After Delimiter
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Day Name'
+		dataType: string
+		lineageTag: 045626ea-621f-4b4f-b3c4-24dfd6fc7296
+		summarizeBy: none
+		sourceColumn: Day Name
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Date = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\tkavi\Downloads\brewmetrics_sales.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"sale_id", Int64.Type}, {"date", type date}, {"city", type text}, {"store_format", type text}, {"category", type text}, {"item", type text}, {"quantity", Int64.Type}, {"unit_price", Int64.Type}, {"sales_amount", type number}}),
+				    #"Removed Other Columns" = Table.SelectColumns(#"Changed Type",{"date"}),
+				    #"Removed Duplicates" = Table.Distinct(#"Removed Other Columns"),
+				    #"Duplicated Column" = Table.DuplicateColumn(#"Removed Duplicates", "date", "date - Copy"),
+				    #"Removed Columns" = Table.RemoveColumns(#"Duplicated Column",{"date - Copy"}),
+				    #"Inserted Year" = Table.AddColumn(#"Removed Columns", "Year", each Date.Year([date]), Int64.Type),
+				    #"Inserted Month" = Table.AddColumn(#"Inserted Year", "Month", each Date.Month([date]), Int64.Type),
+				    #"Inserted Month Name" = Table.AddColumn(#"Inserted Month", "Month Name", each Date.MonthName([date]), type text),
+				    #"Inserted Day Name" = Table.AddColumn(#"Inserted Month Name", "Day Name", each Date.DayOfWeekName([date]), type text),
+				    #"Inserted Day" = Table.AddColumn(#"Inserted Day Name", "Day", each Date.Day([date]), Int64.Type),
+				    #"Reordered Columns" = Table.ReorderColumns(#"Inserted Day",{"date", "Year", "Month Name", "Month", "Day", "Day Name"}),
+				    #"Inserted Text After Delimiter" = Table.AddColumn(#"Reordered Columns", "Text After Delimiter", each Text.AfterDelimiter(Text.From([date], "en-IN"), "-"), type text),
+				    #"Reordered Columns1" = Table.ReorderColumns(#"Inserted Text After Delimiter",{"date", "Year", "Month Name", "Month", "Day", "Text After Delimiter", "Day Name"})
+				in
+				    #"Reordered Columns1"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

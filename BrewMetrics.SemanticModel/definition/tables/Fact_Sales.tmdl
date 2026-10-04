@@ -1,0 +1,151 @@
+table Fact_Sales
+	lineageTag: 6d007a5a-ab74-402e-a136-d2ce5f3c5e9e
+
+	measure 'Total Sales' =
+			
+			SUM(Fact_Sales[sales_amount])
+		lineageTag: 0ab09b42-3bc2-478a-a1e6-0cc13d63ba48
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'MoM Sales Growth %' =
+			
+			VAR CurrentSales = [Total Sales]
+			VAR PreviousSales =
+			    CALCULATE(
+			        [Total Sales],
+			        DATEADD(Dim_Date[date], -1, MONTH)
+			    )
+			RETURN
+			    DIVIDE(CurrentSales - PreviousSales, PreviousSales)
+		lineageTag: 617f6b81-96a1-4aad-a331-5091c39e3556
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Running Total Sales' =
+			
+			CALCULATE(
+			    [Total Sales],
+			    FILTER(
+			        ALLSELECTED(Dim_Date[date]),
+			        Dim_Date[date] <= MAX(Dim_Date[date])
+			    )
+			)
+		lineageTag: 8b66daff-54b7-4ca4-bb2f-6ef2c24ea00d
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'City Sales Rank' =
+			
+			RANKX(
+			    ALL(Dim_City[city]),
+			    [Total Sales],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: 0
+		lineageTag: 86c25ab1-c7f7-457f-8c7c-1155cea4c299
+
+	measure 'Average Transaction Value' =
+			
+			DIVIDE(
+			    [Total Sales],
+			    DISTINCTCOUNT(Fact_Sales[sale_id])
+			)
+		lineageTag: 4e81ea39-452a-4dba-a88b-41c24d2df721
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sale_id
+		dataType: int64
+		formatString: 0
+		lineageTag: deb45c21-bae7-4fe2-8eea-ad0d315d8a23
+		summarizeBy: sum
+		sourceColumn: sale_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d67494b3-f257-4ab3-b85f-89f00a9d36e3
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column city
+		dataType: string
+		lineageTag: df2a9b96-60ce-473a-8699-254e00b3b843
+		summarizeBy: none
+		sourceColumn: city
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_format
+		dataType: string
+		lineageTag: b457aec9-864e-4dfc-bebf-da3df6bed590
+		summarizeBy: none
+		sourceColumn: store_format
+
+		annotation SummarizationSetBy = Automatic
+
+	column category
+		dataType: string
+		lineageTag: c780e08d-6dbf-453e-bbb1-12c2b528df48
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column item
+		dataType: string
+		lineageTag: 675be6e3-6c95-471d-b22e-77218ac35b6a
+		summarizeBy: none
+		sourceColumn: item
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 6f2f14e9-b827-4940-8e66-07b0f848a628
+		summarizeBy: sum
+		sourceColumn: quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_price
+		dataType: int64
+		formatString: 0
+		lineageTag: dd0f5c02-bca2-4863-8c38-27c6774ab572
+		summarizeBy: sum
+		sourceColumn: unit_price
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_amount
+		dataType: double
+		lineageTag: a4bf2c69-1676-4e08-96ef-15cb3eca3bb3
+		summarizeBy: sum
+		sourceColumn: sales_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Fact_Sales = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\tkavi\Downloads\brewmetrics_sales.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"sale_id", Int64.Type}, {"date", type date}, {"city", type text}, {"store_format", type text}, {"category", type text}, {"item", type text}, {"quantity", Int64.Type}, {"unit_price", Int64.Type}, {"sales_amount", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
