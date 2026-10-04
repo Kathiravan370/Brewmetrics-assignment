@@ -1,0 +1,7 @@
+# Reflection
+
+Copilot was useful during the development of the BrewMetrics BI project, especially while creating the DAX measures. It helped suggest suitable DAX functions such as SUM, CALCULATE, DATEADD, FILTER, ALLSELECTED and RANKX. It also helped in structuring calculations such as Month-over-Month Sales Growth, Running Total Sales, City Sales Rank and Average Transaction Value. This reduced the time required to develop the initial DAX expressions.
+
+However, the suggestions could not always be used directly. I had to review the generated formulas based on my actual data model and make corrections where necessary. In particular, I had to ensure that the measures used the correct Fact_Sales and dimension-table columns and that the date calculations referenced Dim_Date correctly. I also checked the results in Power BI before accepting the final measures.
+
+Maintaining separate Git commits changed the way I approached the project. Instead of completing everything first and committing only at the end, I divided the work into logical stages such as repository setup, star-schema creation, DAX measures and dashboard development. This made it easier to track changes, identify problems, and understand how the project developed over time. It also provided a clear history of the development process and made the project more organized.
