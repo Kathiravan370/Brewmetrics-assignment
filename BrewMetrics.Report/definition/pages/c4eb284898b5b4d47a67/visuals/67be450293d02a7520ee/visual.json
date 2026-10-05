@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
   "name": "67be450293d02a7520ee",
   "position": {
     "x": 977.39780577001216,
@@ -59,7 +59,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Cold Brew seasonal sales'"
+                  "Value": "'Brownie seasonal sales'"
                 }
               }
             }
@@ -141,7 +141,7 @@
                     [
                       {
                         "Literal": {
-                          "Value": "'Cold Brew'"
+                          "Value": "'Brownie'"
                         }
                       }
                     ]
