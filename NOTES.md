@@ -1,80 +1,100 @@
-BrewMetrics BI – Copilot DAX Development Notes
+# BrewMetrics - Copilot DAX Development Notes
 
-Overview
+This file documents the development of the DAX measures used in the BrewMetrics Business Intelligence project. GitHub Copilot was used as an assistant during the DAX development process. The suggestions were reviewed and tested against the actual Power BI data model before being used in the report.
 
-This file documents the development of the DAX measures used in the BrewMetrics BI project. Copilot/AI assistance was used to generate and refine DAX expressions, while the final measures were reviewed against the project data model and business requirements.
+The project follows a star-schema structure containing the following main tables:
 
-The main model contains:
+- Fact_Sales
+- Dim_Date
+- Dim_City
+- Dim_Product
 
-Fact_Sales
+The DAX measures were developed to analyse overall sales, monthly changes, cumulative performance, and city-level performance.
 
-Dim_Date
+---
 
-Dim_City
+## 1. Total Sales
 
-Dim_Product
+### Objective
 
-1. Total Sales – Supporting Measure
+The purpose of this measure is to calculate the total sales generated from all transactions.
 
-Purpose
+### Copilot Suggestion
 
-To calculate the total sales amount from the transaction-level Fact_Sales table.
+Copilot suggested using the SUM function on the sales amount column from the Fact_Sales table.
 
-DAX
+### Final DAX
 
+```DAX
 Total Sales =
 SUM(Fact_Sales[sales_amount])
+````
 
-Copilot suggestion
+### Review and Validation
 
-Copilot suggested using the SUM() function on the sales_amount column to create a reusable total-sales measure.
+The suggested formula was checked against the Fact_Sales table and the sales_amount column. Since sales_amount represents the value of each transaction, SUM was appropriate for calculating the overall sales amount.
 
-Changes made
+No major modification was required.
 
-The measure was reviewed and kept as a simple SUM() calculation because sales_amount is the transaction sales value.
+### Usage
 
-Reason
+This measure was used in KPI cards and other report visuals where total sales were required.
 
-This measure is used as a base measure for the other DAX calculations and dashboard visuals.
+---
 
-2. Month-over-Month Sales Growth %
+## 2. Month-over-Month Sales Growth
 
-Purpose
+### Objective
 
-To calculate the percentage change in sales compared with the previous month.
+This measure calculates the percentage change in sales between the current month and the previous month.
 
-DAX
+### Copilot Suggestion
 
-MoM Sales Growth % =
-VAR CurrentSales = [Total Sales]
+Copilot suggested using CALCULATE and DATEADD to retrieve the sales value for the previous month and then compare it with the current month's sales.
+
+### Final DAX
+
+```DAX
+MoM Sales Growth =
+VAR CurrentSales =
+    [Total Sales]
 VAR PreviousSales =
     CALCULATE(
         [Total Sales],
         DATEADD(Dim_Date[date], -1, MONTH)
     )
 RETURN
-    DIVIDE(CurrentSales - PreviousSales, PreviousSales)
+    DIVIDE(
+        CurrentSales - PreviousSales,
+        PreviousSales
+    )
+```
 
-Copilot suggestion
+### Review and Validation
 
-Copilot suggested using CALCULATE() with DATEADD() to retrieve the previous month's sales and then calculating the percentage change.
+The initial approach was checked against the project's date dimension. The calculation was connected to Dim_Date[date] so that the measure could work correctly with the date relationships in the model.
 
-Changes made
+The result was tested using the monthly sales visual to make sure the percentage changed according to the selected month.
 
-The calculation was structured using variables for current sales and previous sales. DIVIDE() was used instead of direct division to handle cases where the previous-month value is zero or blank.
+### Usage
 
-Reason
+This measure was used to analyse whether sales increased or decreased compared with the previous month.
 
-The assignment requires a month-over-month or year-over-year growth measure, and this measure provides a clear month-to-month sales comparison.
+---
 
-3. Running Total Sales
+## 3. Running Total Sales
 
-Purpose
+### Objective
 
-To calculate cumulative sales over the selected date period.
+The purpose of this measure is to calculate cumulative sales over time.
 
-DAX
+### Copilot Suggestion
 
+Copilot suggested using CALCULATE, FILTER and ALLSELECTED to calculate sales from the beginning of the selected period up to the current date.
+
+### Final DAX
+
+```DAX
 Running Total Sales =
 CALCULATE(
     [Total Sales],
@@ -83,71 +103,115 @@ CALCULATE(
         Dim_Date[date] <= MAX(Dim_Date[date])
     )
 )
+```
 
-Copilot suggestion
+### Review and Validation
 
-Copilot suggested using CALCULATE() together with a filtered date context to accumulate sales up to the current date.
+The measure was tested using the date field from Dim_Date. The result was checked in a visual containing monthly or date-based values.
 
-Changes made
+The important validation was to confirm that the value accumulated progressively rather than displaying the same total for every date.
 
-ALLSELECTED() was used so that the running total respects the current report selections while accumulating sales through the selected dates.
+### Usage
 
-Reason
+This measure was used to show cumulative sales performance across the selected period.
 
-The measure is useful for showing cumulative sales progression in the dashboard.
+---
 
-4. City Sales Rank – RANKX
+## 4. City Sales Rank
 
-Purpose
+### Objective
 
-To rank cities according to their total sales.
+This measure ranks cities according to their sales performance.
 
-DAX
+### Copilot Suggestion
 
+Copilot suggested using the RANKX function to compare the sales values of the different cities.
+
+### Final DAX
+
+```DAX
 City Sales Rank =
 RANKX(
-    ALL(Dim_City[city]),
+    ALLSELECTED(Dim_City[city]),
     [Total Sales],
     ,
     DESC,
     DENSE
 )
+```
 
-Copilot suggestion
+### Review and Validation
 
-Copilot suggested using RANKX() with the city field and the total-sales measure.
+The calculation was checked against the Dim_City table and the Total Sales measure.
 
-Changes made
+The ranking was set to descending order so that the city with the highest sales receives Rank 1.
 
-The ranking was configured in descending order so that the city with the highest sales receives rank 1. DENSE ranking was selected so that tied values do not create gaps in the ranking sequence.
+The DENSE option was used so that equal sales values receive the same rank without creating unnecessary gaps in the ranking.
 
-Reason
+### Usage
 
-The assignment requires a RANKX measure and the city ranking directly supports the required city-level performance analysis.
+This measure was used to compare the performance of different cities and identify the higher and lower performing locations.
 
-5. Average Transaction Value
+---
 
-Purpose
+## 5. Average Transaction Value
 
-To calculate the average sales amount per transaction.
+### Objective
 
-DAX
+This measure calculates the average sales value generated per transaction.
 
+### Copilot Suggestion
+
+Copilot suggested calculating the average transaction value by dividing total sales by the number of unique transactions.
+
+### Final DAX
+
+```DAX
 Average Transaction Value =
 DIVIDE(
     [Total Sales],
     DISTINCTCOUNT(Fact_Sales[sale_id])
 )
+```
 
-Copilot suggestion
+### Review and Validation
 
-Copilot suggested calculating average transaction value by dividing total sales by the number of distinct transactions.
+The calculation was checked against the transaction identifier in Fact_Sales.
 
-Changes made
+DISTINCTCOUNT was used to count each transaction once. DIVIDE was used instead of direct division so that the measure could safely handle a zero denominator.
 
-DISTINCTCOUNT() was used on sale_id so that each transaction is counted once. DIVIDE() was used to avoid errors when the transaction count is zero.
+### Usage
 
-Reason
+This measure was used as a KPI to understand the average value of individual transactions.
 
-This measure provides an additional management-level metric for understanding the average value generated per transaction.
+---
 
+# DAX Validation Process
+
+The DAX formulas were not used without verification. The following process was followed during development:
+
+1. Identify the purpose of the required measure.
+2. Use Copilot to obtain an initial DAX approach.
+3. Review the suggested formula.
+4. Match the table and column names with the actual semantic model.
+5. Check the filter and date context.
+6. Create the measure in Power BI.
+7. Test the result using report visuals.
+8. Modify the formula when required.
+9. Verify the final result using different filters and selections.
+
+This process was particularly important for the time-based calculations because their results depend on the date dimension and filter context.
+
+
+# Overall Observation
+
+GitHub Copilot was useful for generating initial DAX approaches and explaining the purpose of different DAX functions. However, the suggested formulas still needed to be reviewed against the actual Power BI model.
+
+Testing the measures through report visuals and applying filters helped confirm that the calculations were working as intended. The process also showed that AI-generated DAX should be treated as a starting point rather than being accepted without validation.
+
+The combination of Power BI, GitHub, and Copilot provided a structured approach to developing and documenting the BrewMetrics BI solution.
+
+```
+
+This follows the assignment's requirement that `NOTES.md` document the Copilot-assisted development of the DAX measures, including what was suggested and how the formulas were reviewed/corrected. :contentReference[oaicite:0]{index=0}
+```
